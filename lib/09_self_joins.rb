@@ -17,18 +17,28 @@ require_relative './sqlzoo.rb'
 def num_stops
   # How many stops are in the database?
   execute(<<-SQL)
+  SELECT COUNT(name)
+  FROM stops
+
   SQL
 end
 
 def craiglockhart_id
   # Find the id value for the stop 'Craiglockhart'.
   execute(<<-SQL)
+  SELECT id
+  FROM stops
+  WHERE name = 'Craiglockhart'
   SQL
 end
 
 def lrt_stops
   # Give the id and the name for the stops on the '4' 'LRT' service.
   execute(<<-SQL)
+  SELECT id, name
+  FROM routes
+    JOIN stops ON stops.id = routes.stop_id
+  WHERE num = '4' AND company = 'LRT'
   SQL
 end
 
@@ -51,6 +61,15 @@ def connecting_routes
   # that link these stops have a count of 2. Add a HAVING clause to restrict
   # the output to these two routes.
   execute(<<-SQL)
+  SELECT
+    company, num, COUNT(*)
+  FROM 
+    routes
+  WHERE
+    stop_id = 149 OR stop_id = 53 
+  GROUP BY 
+    company, num
+  HAVING COUNT(*) = 2
   SQL
 end
 
@@ -73,6 +92,17 @@ def cl_to_lr
   # Craiglockhart, without changing routes. Change the query so that it
   # shows the services from Craiglockhart to London Road.
   execute(<<-SQL)
+  SELECT
+    start.company,
+    start.num,
+    start.stop_id,
+    travel.stop_id
+  FROM
+    routes AS start
+  JOIN 
+    routes AS travel ON (start.num = travel.num AND start.company = travel.company)
+  WHERE
+    start.stop_id = 53 AND travel.stop_id = 149
   SQL
 end
 
@@ -100,6 +130,21 @@ def cl_to_lr_by_name
   # number. Change the query so that the services between 'Craiglockhart' and
   # 'London Road' are shown.
   execute(<<-SQL)
+SELECT
+  a.company,
+  a.num,
+  stopa.name,
+  stopb.name
+FROM
+  routes AS a
+JOIN 
+  routes AS b ON (a.num = b.num AND a.company = b.company)
+JOIN
+  stops AS stopa ON (a.stop_id = stopa.id)
+JOIN 
+  stops AS stopb ON (b.stop_id = stopb.id)
+WHERE
+  stopa.name = 'Craiglockhart' AND stopb.name = 'London Road'
   SQL
 end
 
